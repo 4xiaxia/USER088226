@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>村官智能体 - 轻松对话</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+      .float {
+        animation: float 3s ease-in-out infinite;
+      }
+      .pulse {
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      /* Landing风格的输入框 */
+      .landing-input {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(16, 185, 129, 0.2);
+        border-radius: 25px;
+        padding: 12px 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+
+      .landing-input:focus {
+        outline: none;
+        border-color: rgba(16, 185, 129, 0.5);
+        box-shadow: 0 8px 32px rgba(16, 185, 129, 0.2);
+      }
+
+      .landing-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+      }
+
+      .landing-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
+      }
+
+      .landing-btn:active {
+        transform: scale(0.95);
+      }
+
+      /* 聊天气泡 */
+      .chat-bubble {
+        max-width: 80%;
+        padding: 12px 16px;
+        border-radius: 20px;
+        margin-bottom: 8px;
+        word-wrap: break-word;
+      }
+
+      .chat-bubble-user {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border-radius: 20px 20px 5px 20px;
+        margin-left: auto;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+
+      .chat-bubble-assistant {
+        background: rgba(255, 255, 255, 0.95);
+        color: #374151;
+        border-radius: 20px 20px 20px 5px;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      /* 功能卡片 */
+      .feature-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        border-radius: 20px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      }
+
+      .feature-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(16, 185, 129, 0.2);
+        border-color: rgba(16, 185, 129, 0.4);
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-emerald-50 via-white to-teal-50 min-h-screen">
+    <!-- 主容器 -->
+    <div class="max-w-md mx-auto min-h-screen relative overflow-hidden">
+      <!-- 背景装饰 -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          class="absolute top-20 left-10 w-24 h-24 bg-emerald-100 rounded-full opacity-20 float"
+        ></div>
+        <div
+          class="absolute bottom-32 right-16 w-20 h-20 bg-teal-100 rounded-full opacity-30 float"
+          style="animation-delay: 1s"
+        ></div>
+        <div
+          class="absolute top-1/2 left-1/4 w-16 h-16 bg-green-100 rounded-full opacity-15 float"
+          style="animation-delay: 2s"
+        ></div>
+      </div>
+
+      <!-- 顶部村官区域 -->
+      <div class="pt-8 pb-4 text-center">
+        <!-- 村官头像 -->
+        <div class="relative mb-4">
+          <div
+            class="w-24 h-24 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full p-1 shadow-xl pulse mx-auto"
+          >
+            <div class="w-full h-full bg-white rounded-full p-1">
+              <video
+                src="./mp4/gif.mp4"
+                class="w-full h-full rounded-full object-cover"
+                muted
+                loop
+                playsinline
+                autoplay
+                preload="auto"
+              ></video>
+            </div>
+          </div>
+          <!-- 在线状态 -->
+          <div
+            class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center"
+          >
+            <div class="w-2 h-2 bg-white rounded-full pulse"></div>
+          </div>
+        </div>
+
+        <h2 class="text-xl font-bold text-gray-800 mb-1">小叶子 🌿</h2>
+        <p class="text-sm text-emerald-600 font-medium">您的专属村官导游</p>
+      </div>
+
+      <!-- 聊天区域 -->
+      <div class="px-4 pb-32 space-y-4" id="chatArea">
+        <!-- 欢迎消息 -->
+        <div class="flex justify-start">
+          <div class="chat-bubble chat-bubble-assistant">
+            <p class="text-sm">哈喽！你来啦！🤩 我是小叶子，东里村最热情的数字精灵导游！✨</p>
+            <p class="text-sm mt-2">欢迎来到我们美丽的东里村！有什么想知道的尽管问我哦！🌸</p>
+          </div>
+        </div>
+
+        <!-- 快捷功能卡片 - 采用landing的简洁风格 -->
+        <div class="grid grid-cols-2 gap-3 my-6">
+          <div class="feature-card text-center" onclick="quickAction('红色之旅')">
+            <div class="text-2xl mb-2">🏛️</div>
+            <p class="text-sm font-medium text-gray-700">红色之旅</p>
+          </div>
+
+          <div class="feature-card text-center" onclick="quickAction('伴你游东里')">
+            <div class="text-2xl mb-2">🌿</div>
+            <p class="text-sm font-medium text-gray-700">伴你游东里</p>
+          </div>
+
+          <div class="feature-card text-center" onclick="quickAction('走进东里')">
+            <div class="text-2xl mb-2">📚</div>
+            <p class="text-sm font-medium text-gray-700">走进东里</p>
+          </div>
+
+          <div class="feature-card text-center" onclick="quickAction('村子动态')">
+            <div class="text-2xl mb-2">📢</div>
+            <p class="text-sm font-medium text-gray-700">村子动态</p>
+          </div>
+        </div>
+
+        <!-- 示例对话 -->
+        <div class="flex justify-end">
+          <div class="chat-bubble chat-bubble-user">
+            <p class="text-sm">我想了解一下红色之旅</p>
+          </div>
+        </div>
+
+        <div class="flex justify-start">
+          <div class="chat-bubble chat-bubble-assistant">
+            <p class="text-sm">太好了！东里村有着丰富的革命历史 🏛️</p>
+            <p class="text-sm mt-2">我为您推荐几个必去的红色景点：</p>
+            <div class="mt-3 space-y-2">
+              <div class="bg-red-50 border border-red-200 rounded-lg p-2">
+                <p class="text-xs font-medium text-red-800">烈士纪念碑</p>
+                <p class="text-xs text-red-600">缅怀革命先烈</p>
+              </div>
+              <div class="bg-red-50 border border-red-200 rounded-lg p-2">
+                <p class="text-xs font-medium text-red-800">红军渡口</p>
+                <p class="text-xs text-red-600">重走红军路</p>
+              </div>
+            </div>
+            <p class="text-sm mt-2">您想先去哪个地方看看呢？🧭</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部输入区域 - 完全采用landing风格 -->
+      <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto">
+        <div
+          class="m-4 p-4 bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20"
+        >
+          <!-- 输入模式切换 -->
+          <div class="flex justify-center mb-4" id="modeSelector">
+            <div class="flex bg-gray-100 rounded-full p-1">
+              <button
+                class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 text-gray-600"
+                id="voiceBtn"
+                onclick="switchMode('voice')"
+              >
+                🎤 语音
+              </button>
+              <button
+                class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 bg-emerald-500 text-white"
+                id="textBtn"
+                onclick="switchMode('text')"
+              >
+                ⌨️ 键盘
+              </button>
+            </div>
+          </div>
+
+          <!-- 文字输入模式 -->
+          <div class="flex items-center space-x-3" id="textInput">
+            <input
+              type="text"
+              placeholder="和小叶子聊聊..."
+              class="flex-1 landing-input text-sm"
+              id="messageInput"
+              onkeypress="handleKeyPress(event)"
+            />
+            <button class="landing-btn" onclick="sendMessage()">➤</button>
+          </div>
+
+          <!-- 语音输入模式 -->
+          <div class="hidden" id="voiceInput">
+            <div class="text-center">
+              <div class="mb-3" id="voiceText"></div>
+              <button
+                class="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full font-medium transition-all duration-300 hover:shadow-lg"
+                id="voiceBtn"
+                onclick="toggleVoice()"
+              >
+                🎤 点击说话
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentMode = 'text';
+      let isListening = false;
+      let recognition = null;
+
+      // 模式切换
+      function switchMode(mode) {
+        currentMode = mode;
+        const textInput = document.getElementById('textInput');
+        const voiceInput = document.getElementById('voiceInput');
+        const textBtn = document.getElementById('textBtn');
+        const voiceBtn = document.getElementById('voiceBtn');
+
+        if (mode === 'text') {
+          textInput.classList.remove('hidden');
+          voiceInput.classList.add('hidden');
+          textBtn.classList.add('bg-emerald-500', 'text-white');
+          textBtn.classList.remove('text-gray-600');
+          voiceBtn.classList.remove('bg-emerald-500', 'text-white');
+          voiceBtn.classList.add('text-gray-600');
+        } else {
+          textInput.classList.add('hidden');
+          voiceInput.classList.remove('hidden');
+          voiceBtn.classList.add('bg-emerald-500', 'text-white');
+          voiceBtn.classList.remove('text-gray-600');
+          textBtn.classList.remove('bg-emerald-500', 'text-white');
+          textBtn.classList.add('text-gray-600');
+        }
+      }
+
+      // 快捷功能
+      function quickAction(action) {
+        addUserMessage(`我想了解${action}`);
+        setTimeout(() => {
+          addAssistantMessage(getQuickResponse(action));
+        }, 1000);
+      }
+
+      function getQuickResponse(action) {
+        const responses = {
+          红色之旅: '为您推荐红色景点路线！包括烈士纪念碑、红军渡口等历史遗迹 🏛️',
+          伴你游东里: '精选三条旅游路线：自然风光线、文化体验线、美食探索线 🌿',
+          走进东里: '东里村历史悠久，有许多历史名人和乡贤故事值得了解 📚',
+          村子动态: '最新村务公告、乡民集市信息、农家订养服务都在这里 📢',
+        };
+        return responses[action] || '感谢您的咨询，我会为您详细介绍！';
+      }
+
+      // 发送消息
+      function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+        if (message) {
+          addUserMessage(message);
+          input.value = '';
+
+          // 模拟AI回复
+          setTimeout(() => {
+            addAssistantMessage('收到您的消息！我正在为您查找相关信息... 🤔');
+          }, 1000);
+        }
+      }
+
+      function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+          sendMessage();
+        }
+      }
+
+      // 语音功能
+      function toggleVoice() {
+        if (isListening) {
+          stopListening();
+        } else {
+          startListening();
+        }
+      }
+
+      function startListening() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          recognition = new SpeechRecognition();
+          recognition.lang = 'zh-CN';
+          recognition.continuous = true;
+          recognition.interimResults = true;
+
+          recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              transcript += event.results[i][0].transcript;
+            }
+            document.getElementById('voiceText').innerHTML =
+              `<div class="chat-bubble chat-bubble-user text-sm">${transcript}</div>`;
+          };
+
+          recognition.onend = () => {
+            isListening = false;
+            updateVoiceButton();
+          };
+
+          recognition.start();
+          isListening = true;
+          updateVoiceButton();
+        } else {
+          alert('您的浏览器不支持语音输入功能');
+        }
+      }
+
+      function stopListening() {
+        if (recognition) {
+          recognition.stop();
+          const text = document.getElementById('voiceText').textContent;
+          if (text.trim()) {
+            addUserMessage(text.trim());
+            document.getElementById('voiceText').innerHTML = '';
+            setTimeout(() => {
+              addAssistantMessage('收到您的语音消息！我正在处理... 🎤');
+            }, 1000);
+          }
+        }
+        isListening = false;
+        updateVoiceButton();
+      }
+
+      function updateVoiceButton() {
+        const btn = document.querySelector('#voiceInput button');
+        if (isListening) {
+          btn.innerHTML = '🔴 点击发送';
+          btn.classList.add('bg-red-500');
+          btn.classList.remove('from-emerald-500', 'to-green-600');
+        } else {
+          btn.innerHTML = '🎤 点击说话';
+          btn.classList.remove('bg-red-500');
+          btn.classList.add('bg-gradient-to-r', 'from-emerald-500', 'to-green-600');
+        }
+      }
+
+      // 添加消息到聊天区域
+      function addUserMessage(message) {
+        const chatArea = document.getElementById('chatArea');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex justify-end';
+        messageDiv.innerHTML = `
+                <div class="chat-bubble chat-bubble-user">
+                    <p class="text-sm">${message}</p>
+                </div>
+            `;
+        chatArea.appendChild(messageDiv);
+        scrollToBottom();
+      }
+
+      function addAssistantMessage(message) {
+        const chatArea = document.getElementById('chatArea');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex justify-start';
+        messageDiv.innerHTML = `
+                <div class="chat-bubble chat-bubble-assistant">
+                    <p class="text-sm">${message}</p>
+                </div>
+            `;
+        chatArea.appendChild(messageDiv);
+        scrollToBottom();
+      }
+
+      function scrollToBottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    </script>
+  </body>
+</html>

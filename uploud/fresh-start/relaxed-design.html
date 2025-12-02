@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>村官智能体 - 轻松模式</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
+      .float {
+        animation: float 4s ease-in-out infinite;
+      }
+      .pulse {
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      /* 聊天窗口样式 */
+      .chat-window {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 320px;
+        max-height: 400px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+      }
+
+      .chat-window.open {
+        transform: translateY(0);
+      }
+
+      .chat-bubble-user {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border-radius: 18px 18px 4px 18px;
+        padding: 10px 14px;
+        margin: 8px 0;
+        max-width: 80%;
+        margin-left: auto;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+
+      .chat-bubble-assistant {
+        background: rgba(248, 250, 252, 0.95);
+        color: #374151;
+        border-radius: 18px 18px 18px 4px;
+        padding: 10px 14px;
+        margin: 8px 0;
+        max-width: 80%;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      /* 浮动助手按钮 */
+      .floating-assistant {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        transition: all 0.3s ease;
+        z-index: 1000;
+      }
+
+      .floating-assistant:hover {
+        transform: scale(1.1);
+        box-shadow: 0 12px 32px rgba(16, 185, 129, 0.5);
+      }
+
+      .floating-assistant.chat-open {
+        transform: scale(0.9);
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-emerald-50 via-white to-teal-50 min-h-screen">
+    <!-- 主页面内容 -->
+    <div class="max-w-md mx-auto min-h-screen relative overflow-hidden">
+      <!-- 背景装饰 -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          class="absolute top-20 left-10 w-24 h-24 bg-emerald-100 rounded-full opacity-20 float"
+        ></div>
+        <div
+          class="absolute bottom-32 right-16 w-20 h-20 bg-teal-100 rounded-full opacity-30 float"
+          style="animation-delay: 1s"
+        ></div>
+        <div
+          class="absolute top-1/2 left-1/4 w-16 h-16 bg-green-100 rounded-full opacity-15 float"
+          style="animation-delay: 2s"
+        ></div>
+      </div>
+
+      <!-- 顶部欢迎区域 -->
+      <div class="pt-12 pb-8 text-center">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">欢迎来到东里村 🌿</h1>
+        <p class="text-gray-600 text-sm">探索美丽乡村，感受人文魅力</p>
+      </div>
+
+      <!-- 主要功能区域 -->
+      <div class="px-6 space-y-6 pb-32">
+        <!-- 红色之旅 -->
+        <div
+          class="bg-gradient-to-r from-red-500 to-red-600 rounded-3xl p-6 text-white shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer"
+          onclick="navigateToSection('red-tour')"
+        >
+          <div class="flex items-center space-x-4">
+            <div
+              class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl"
+            >
+              🏛️
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold mb-1">红色之旅</h3>
+              <p class="text-red-100 text-sm">传承革命精神，感受红色文化</p>
+              <div class="mt-2 flex space-x-2">
+                <span class="bg-white/20 px-2 py-1 rounded-full text-xs">烈士纪念碑</span>
+                <span class="bg-white/20 px-2 py-1 rounded-full text-xs">红军渡口</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 伴你游东里 -->
+        <div
+          class="bg-gradient-to-r from-emerald-500 to-green-600 rounded-3xl p-6 text-white shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer"
+          onclick="navigateToSection('tour-guide')"
+        >
+          <div class="flex items-center space-x-4">
+            <div
+              class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl"
+            >
+              🌿
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold mb-1">伴你游东里</h3>
+              <p class="text-emerald-100 text-sm">精选路线推荐，畅游美丽乡村</p>
+              <div class="mt-2 flex space-x-2">
+                <span class="bg-white/20 px-2 py-1 rounded-full text-xs">自然风光</span>
+                <span class="bg-white/20 px-2 py-1 rounded-full text-xs">文化体验</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 走进东里 -->
+        <div
+          class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer"
+          onclick="navigateToSection('village-story')"
+        >
+          <div class="flex items-center space-x-4">
+            <div
+              class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl"
+            >
+              📚
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold mb-1">走进东里</h3>
+              <p class="text-blue-100 text-sm">历史名人 · 乡贤历任 · 优秀青年</p>
+              <div class="mt-2 flex space-x-2">
+                <span class="bg-white/20 px-2 py-1 rounded-full text-xs">名人堂</span>
+                <span class="bg-white/20 px-2 py-1 rounded-full text-xs">村史</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 村子动态 -->
+        <div
+          class="bg-gradient-to-r from-purple-500 to-pink-600 rounded-3xl p-6 text-white shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer"
+          onclick="navigateToSection('village-news')"
+        >
+          <div class="flex items-center space-x-4">
+            <div
+              class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-3xl"
+            >
+              📢
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold mb-1">村子动态</h3>
+              <p class="text-purple-100 text-sm">村公告服务 · 乡民集市 · 农家订养</p>
+              <div class="mt-2 flex space-x-2">
+                <span class="bg-white/20 px-2 py-1 rounded-full text-xs">最新公告</span>
+                <span class="bg-white/20 px-2 py-1 rounded-full text-xs">集市</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 快捷服务 -->
+        <div class="grid grid-cols-2 gap-4">
+          <div
+            class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg border border-emerald-100 cursor-pointer hover:scale-105 transition-transform"
+            onclick="showMap()"
+          >
+            <div class="text-2xl mb-2">🗺️</div>
+            <p class="text-sm font-medium text-gray-700">村庄地图</p>
+          </div>
+          <div
+            class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 text-center shadow-lg border border-emerald-100 cursor-pointer hover:scale-105 transition-transform"
+            onclick="showWeather()"
+          >
+            <div class="text-2xl mb-2">🌤️</div>
+            <p class="text-sm font-medium text-gray-700">天气预报</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 浮动智能助手按钮 -->
+    <div class="floating-assistant" id="assistantBtn" onclick="toggleChat()">
+      <div class="relative">
+        <video
+          src="./mp4/gif.mp4"
+          class="w-12 h-12 rounded-full object-cover"
+          muted
+          loop
+          playsinline
+          autoplay
+          preload="auto"
+        ></video>
+        <!-- 消息提示点 -->
+        <div
+          class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
+        >
+          <div class="w-2 h-2 bg-white rounded-full pulse"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 聊天窗口 -->
+    <div class="chat-window" id="chatWindow">
+      <!-- 聊天头部 -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full p-1">
+            <div class="w-full h-full bg-white rounded-full p-1">
+              <video
+                src="./mp4/gif.mp4"
+                class="w-full h-full rounded-full object-cover"
+                muted
+                loop
+                playsinline
+                autoplay
+                preload="auto"
+              ></video>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800">小叶子</h4>
+            <p class="text-xs text-emerald-600">在线为您服务</p>
+          </div>
+        </div>
+        <button
+          onclick="toggleChat()"
+          class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- 聊天内容区域 -->
+      <div class="p-4 h-64 overflow-y-auto" id="chatContent">
+        <div class="chat-bubble-assistant">
+          <p class="text-sm">您好！我是小叶子 🌿</p>
+          <p class="text-sm mt-1">有什么可以帮助您的吗？</p>
+        </div>
+      </div>
+
+      <!-- 输入区域 -->
+      <div class="p-4 border-t border-gray-100">
+        <div class="flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="输入消息..."
+            class="flex-1 bg-gray-50 border border-gray-200 rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
+            id="chatInput"
+            onkeypress="handleChatKeyPress(event)"
+          />
+          <button
+            onclick="sendChatMessage()"
+            class="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white hover:bg-emerald-600 transition-colors"
+          >
+            ➤
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let isChatOpen = false;
+
+      // 切换聊天窗口
+      function toggleChat() {
+        const chatWindow = document.getElementById('chatWindow');
+        const assistantBtn = document.getElementById('assistantBtn');
+
+        isChatOpen = !isChatOpen;
+
+        if (isChatOpen) {
+          chatWindow.classList.add('open');
+          assistantBtn.classList.add('chat-open');
+        } else {
+          chatWindow.classList.remove('open');
+          assistantBtn.classList.remove('chat-open');
+        }
+      }
+
+      // 发送聊天消息
+      function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (message) {
+          addChatMessage(message, 'user');
+          input.value = '';
+
+          // 模拟AI回复
+          setTimeout(() => {
+            addChatMessage('收到您的消息！我来为您解答 😊', 'assistant');
+          }, 1000);
+        }
+      }
+
+      function handleChatKeyPress(event) {
+        if (event.key === 'Enter') {
+          sendChatMessage();
+        }
+      }
+
+      // 添加聊天消息
+      function addChatMessage(message, sender) {
+        const chatContent = document.getElementById('chatContent');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-bubble-${sender}`;
+        messageDiv.innerHTML = `<p class="text-sm">${message}</p>`;
+        chatContent.appendChild(messageDiv);
+        chatContent.scrollTop = chatContent.scrollHeight;
+      }
+
+      // 导航功能
+      function navigateToSection(section) {
+        // 先打开聊天窗口
+        if (!isChatOpen) {
+          toggleChat();
+        }
+
+        // 添加相关消息
+        setTimeout(() => {
+          addChatMessage(`我想了解${getSectionName(section)}`, 'user');
+          setTimeout(() => {
+            addChatMessage(getSectionResponse(section), 'assistant');
+          }, 1000);
+        }, 500);
+      }
+
+      function getSectionName(section) {
+        const names = {
+          'red-tour': '红色之旅',
+          'tour-guide': '伴你游东里',
+          'village-story': '走进东里',
+          'village-news': '村子动态',
+        };
+        return names[section] || '相关信息';
+      }
+
+      function getSectionResponse(section) {
+        const responses = {
+          'red-tour': '为您推荐红色景点路线！包括烈士纪念碑、红军渡口等历史遗迹 🏛️',
+          'tour-guide': '精选三条旅游路线：自然风光线、文化体验线、美食探索线 🌿',
+          'village-story': '东里村历史悠久，有许多历史名人和乡贤故事值得了解 📚',
+          'village-news': '最新村务公告、乡民集市信息、农家订养服务都在这里 📢',
+        };
+        return responses[section] || '感谢您的咨询，我会为您详细介绍！';
+      }
+
+      // 其他功能
+      function showMap() {
+        alert('地图功能 🗺️\\n\\n将显示村庄地图，包括：\\n• 景点标记\\n• 路线规划\\n• 实时导航');
+      }
+
+      function showWeather() {
+        alert('天气预报 🌤️\\n\\n今日天气：晴朗\\n温度：22-28°C\\n湿度：65%\\n风力：微风');
+      }
+    </script>
+  </body>
+</html>

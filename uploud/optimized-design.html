@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>村官智能体 - 优化版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px) scale(0.8);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes slideInFromCorner {
+        from {
+          opacity: 0;
+          transform: scale(0.3) rotate(10deg);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) rotate(0deg);
+        }
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
+
+      .float {
+        animation: float 4s ease-in-out infinite;
+      }
+      .pulse {
+        animation: pulse 3s ease-in-out infinite;
+      }
+      .fade-in-up {
+        animation: fadeInUp 0.8s ease-out forwards;
+      }
+      .slide-in-corner {
+        animation: slideInFromCorner 0.8s ease-out forwards;
+      }
+
+      /* Landing风格的全局约束框架 */
+      .app-container {
+        max-width: 414px;
+        margin: 0 auto;
+        min-height: 100vh;
+        position: relative;
+        background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 50%, #f0fdfa 100%);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      /* 聊天窗口 - 简化版 */
+      .chat-window {
+        position: absolute;
+        bottom: 140px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 300px;
+        max-width: calc(100% - 40px);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 25px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        z-index: 1000;
+        padding: 20px;
+      }
+
+      .chat-bubble-assistant {
+        background: rgba(248, 250, 252, 0.95);
+        color: #374151;
+        border-radius: 18px 18px 18px 4px;
+        padding: 12px 16px;
+        margin: 8px 0;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      /* 词条式功能模块 - 围绕A叔浮动 */
+      .feature-tag {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 25px;
+        padding: 8px 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0;
+        z-index: 999;
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+        white-space: nowrap;
+      }
+
+      .feature-tag:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 12px 32px rgba(16, 185, 129, 0.2);
+        border-color: rgba(16, 185, 129, 0.4);
+      }
+
+      .feature-tag.show {
+        opacity: 1;
+      }
+
+      /* 村官头像 - 视觉焦点 */
+      .village-chief {
+        position: absolute;
+        top: 120px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1001;
+      }
+
+      /* 胶囊输入框 - 按设计图样式 */
+      .capsule-input {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 32px;
+        padding: 12px 16px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 320px;
+        max-width: calc(100% - 48px);
+      }
+
+      /* 输入框主体 */
+      .text-input {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 25px;
+        padding: 12px 16px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.3s ease;
+      }
+
+      .text-input:focus {
+        border-color: rgba(16, 185, 129, 0.6);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        background: rgba(255, 255, 255, 1);
+      }
+
+      /* 切换按钮组 */
+      .switch-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .switch-btn {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        background: rgba(255, 255, 255, 0.8);
+        color: #374151;
+      }
+
+      .switch-btn.active {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-color: rgba(16, 185, 129, 0.3);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+
+      .switch-btn.voice {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border: none;
+      }
+
+      /* 发送按钮 */
+      .send-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+
+      .send-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+      }
+
+      /* 跳过按钮 */
+      .skip-button {
+        position: absolute;
+        top: 30px;
+        right: 30px;
+        z-index: 1002;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 12px;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .skip-button:hover {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <!-- Landing风格的全局约束容器 -->
+    <div class="app-container">
+      <!-- 背景装饰 -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          class="absolute top-20 left-10 w-20 h-20 bg-emerald-100 rounded-full opacity-20 float"
+        ></div>
+        <div
+          class="absolute bottom-32 right-16 w-16 h-16 bg-teal-100 rounded-full opacity-30 float"
+          style="animation-delay: 1s"
+        ></div>
+        <div
+          class="absolute top-1/2 left-1/4 w-12 h-12 bg-green-100 rounded-full opacity-15 float"
+          style="animation-delay: 2s"
+        ></div>
+      </div>
+
+      <!-- 跳过按钮 -->
+      <button class="skip-button" onclick="skipIntroduction()">跳过介绍</button>
+
+      <!-- 村官头像区域 - 视觉焦点 -->
+      <div class="village-chief" id="villageChief">
+        <div class="relative">
+          <div
+            class="w-28 h-28 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full p-1 shadow-xl pulse"
+          >
+            <div class="w-full h-full bg-white rounded-full p-1">
+              <video
+                src="mp4/gif.mp4"
+                class="w-full h-full rounded-full object-cover"
+                muted
+                loop
+                playsinline
+                autoplay
+                preload="auto"
+                onerror="
+                  this.parentElement.innerHTML =
+                    '<div class=&quot;w-full h-full bg-emerald-100 rounded-full flex items-center justify-center&quot;><span class=&quot;text-2xl&quot;>👨‍💼</span></div>'
+                "
+              ></video>
+            </div>
+          </div>
+          <!-- 在线状态 -->
+          <div
+            class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center"
+          >
+            <div class="w-2 h-2 bg-white rounded-full pulse"></div>
+          </div>
+        </div>
+        <!-- 村官名字 -->
+        <div class="text-center mt-3">
+          <h3 class="text-xl font-bold text-gray-800">A叔村官</h3>
+          <p class="text-sm text-emerald-600" id="chiefStatus">正在为您介绍...</p>
+        </div>
+      </div>
+
+      <!-- 聊天窗口 - 简化版，只有2个对话 -->
+      <div class="chat-window" id="chatWindow">
+        <div id="chatContent">
+          <!-- 对话内容会动态添加 -->
+        </div>
+      </div>
+
+      <!-- 词条式功能模块 - 围绕A叔浮动，按设计图6个标签 -->
+      <!-- 红色之旅 - 左上 -->
+      <div class="feature-tag" id="redTourTag" style="top: 180px; left: 80px">🏛️ 红色之旅</div>
+
+      <!-- 伴你游东里 - 右上 -->
+      <div class="feature-tag" id="tourTag" style="top: 160px; right: 60px">🌿 伴你游东里</div>
+
+      <!-- 走进东里 - 左下 -->
+      <div class="feature-tag" id="historyTag" style="bottom: 280px; left: 60px">📚 走进东里</div>
+
+      <!-- 村子动态 - 右下 -->
+      <div class="feature-tag" id="newsTag" style="bottom: 300px; right: 80px">📢 村子动态</div>
+
+      <!-- 乡村服务 - 左中 -->
+      <div class="feature-tag" id="serviceTag" style="top: 250px; left: 40px">🏪 乡村服务</div>
+
+      <!-- 文化活动 - 右中 -->
+      <div class="feature-tag" id="cultureTag" style="top: 270px; right: 40px">🎭 文化活动</div>
+
+      <!-- 胶囊输入框 - 按设计图样式，键盘|语音切换 -->
+      <div class="capsule-input" id="capsuleInput" style="display: none">
+        <input
+          type="text"
+          class="text-input"
+          placeholder="和A叔聊聊..."
+          id="textInput"
+          onkeypress="handleKeyPress(event)"
+        />
+        <div class="switch-buttons">
+          <button class="switch-btn active" onclick="switchMode('text')" id="textBtn">键盘</button>
+          <button class="switch-btn voice" onclick="switchMode('voice')" id="voiceBtn">🎤</button>
+        </div>
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+
+    <script>
+      let currentStep = 0;
+      let isIntroductionComplete = false;
+      let isSkipped = false;
+
+      // 简化的介绍步骤 - 显示6个标签
+      const introductionSteps = [
+        {
+          message: '你好！欢迎来到东里村，我是A叔村官 😊',
+          delay: 1000,
+          showTags: ['redTourTag', 'tourTag', 'serviceTag'],
+        },
+        {
+          message:
+            '我可以为您提供红色之旅、游览导览、村史介绍、最新动态、乡村服务和文化活动等服务，点击任意标签开始体验吧！',
+          delay: 4000,
+          showTags: ['historyTag', 'newsTag', 'cultureTag'],
+          complete: true,
+        },
+      ];
+
+      // 开始介绍
+      function startIntroduction() {
+        if (isSkipped) return;
+
+        introductionSteps.forEach((step, index) => {
+          setTimeout(() => {
+            if (isSkipped) return;
+
+            addAssistantMessage(step.message);
+
+            // 显示对应的功能标签
+            if (step.showTags) {
+              setTimeout(() => {
+                step.showTags.forEach((tagId) => {
+                  showFeatureTag(tagId);
+                });
+              }, 1000);
+            }
+
+            // 标记介绍完成
+            if (step.complete) {
+              isIntroductionComplete = true;
+              updateChiefStatus();
+              showInputArea();
+            }
+          }, step.delay);
+        });
+      }
+
+      // 跳过介绍
+      function skipIntroduction() {
+        isSkipped = true;
+        isIntroductionComplete = true;
+
+        // 清空聊天内容
+        document.getElementById('chatContent').innerHTML = '';
+
+        // 显示所有功能标签
+        ['redTourTag', 'tourTag', 'historyTag', 'newsTag'].forEach((tagId) => {
+          showFeatureTag(tagId);
+        });
+
+        // 更新状态
+        updateChiefStatus();
+        showInputArea();
+
+        // 隐藏聊天窗口
+        document.getElementById('chatWindow').style.display = 'none';
+      }
+
+      // 显示功能标签
+      function showFeatureTag(tagId) {
+        const tag = document.getElementById(tagId);
+        if (tag) {
+          tag.classList.add('show', 'slide-in-corner');
+
+          // 添加点击事件
+          tag.onclick = () => {
+            const tagName = getTagName(tagId);
+            handleTagClick(tagName, tagId);
+          };
+        }
+      }
+
+      // 显示输入区域
+      function showInputArea() {
+        setTimeout(() => {
+          document.getElementById('capsuleInput').style.display = 'flex';
+        }, 2000);
+      }
+
+      // 切换输入模式
+      function switchMode(mode) {
+        const textBtn = document.getElementById('textBtn');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const textInput = document.getElementById('textInput');
+
+        if (mode === 'text') {
+          textBtn.classList.add('active');
+          voiceBtn.classList.remove('active');
+          textInput.style.display = 'block';
+          textInput.placeholder = '和A叔聊聊...';
+        } else {
+          textBtn.classList.remove('active');
+          voiceBtn.classList.add('active');
+          textInput.style.display = 'none';
+          // 启动语音识别
+          startVoiceRecording();
+        }
+      }
+
+      // 开始语音录音
+      function startVoiceRecording() {
+        // 这里可以集成API
+        alert('🎤 语音功能开发中...\n\n将支持:\n• 语音转文字\n• 文字转语音\n• 实时语音对话');
+      }
+
+      // 处理标签点击
+      function handleTagClick(tagName, tagId) {
+        // 显示聊天窗口
+        const chatWindow = document.getElementById('chatWindow');
+        chatWindow.style.display = 'block';
+
+        // 清空之前的内容
+        document.getElementById('chatContent').innerHTML = '';
+
+        // 添加用户消息
+        addUserMessage(`我想了解${tagName}`);
+
+        // 添加A叔回复
+        setTimeout(() => {
+          addAssistantMessage(getTagResponse(tagId));
+        }, 1000);
+      }
+
+      // 更新村官状态
+      function updateChiefStatus() {
+        document.getElementById('chiefStatus').textContent = '随时为您服务';
+      }
+
+      // 获取标签名称
+      function getTagName(tagId) {
+        const names = {
+          redTourTag: '红色之旅',
+          tourTag: '伴你游东里',
+          historyTag: '走进东里',
+          newsTag: '村子动态',
+          serviceTag: '乡村服务',
+          cultureTag: '文化活动',
+        };
+        return names[tagId] || '相关服务';
+      }
+
+      // 获取标签回复
+      function getTagResponse(tagId) {
+        const responses = {
+          redTourTag:
+            '太好了！红色之旅包括烈士纪念碑、红军渡口等革命遗址，每一处都有着动人的历史故事... 🏛️<br><br><span style="color: #10b981; cursor: pointer; text-decoration: underline;" onclick="jumpToSection(\'redTour\')">📍 点此跳转红色之旅区域</span>',
+          tourTag:
+            '欢迎体验精选旅游路线！有自然风光线、文化体验线、美食探索线，带您深度体验东里村魅力... 🌿<br><br><span style="color: #10b981; cursor: pointer; text-decoration: underline;" onclick="jumpToSection(\'tour\')">📍 点此跳转游览导览区域</span>',
+          historyTag:
+            '东里村历史悠久，人才辈出！这里有历史名人、乡贤历任和优秀青年的精彩故事... 📚<br><br><span style="color: #10b981; cursor: pointer; text-decoration: underline;" onclick="jumpToSection(\'history\')">📍 点此跳转村史文化区域</span>',
+          newsTag:
+            '最新村务信息！包括村公告服务、乡民集市、农家订养预定等便民服务... 📢<br><br><span style="color: #10b981; cursor: pointer; text-decoration: underline;" onclick="jumpToSection(\'news\')">📍 点此跳转村子动态区域</span>',
+          serviceTag:
+            '乡村服务包括便民服务、农产品销售、快递代收、生活缴费等一站式服务... 🏪<br><br><span style="color: #10b981; cursor: pointer; text-decoration: underline;" onclick="jumpToSection(\'service\')">📍 点此跳转乡村服务区域</span>',
+          cultureTag:
+            '文化活动丰富多彩！有传统节庆、民俗表演、文艺演出、书画展览等精彩活动... 🎭<br><br><span style="color: #10b981; cursor: pointer; text-decoration: underline;" onclick="jumpToSection(\'culture\')">📍 点此跳转文化活动区域</span>',
+        };
+        return responses[tagId] || '感谢您的关注，我会为您详细介绍！';
+      }
+
+      // 跳转到对应区域
+      function jumpToSection(section) {
+        const sectionUrls = {
+          redTour: '#red-tour-section',
+          tour: '#tour-guide-section', 
+          history: '#village-history-section',
+          news: '#village-news-section',
+          service: '#village-service-section',
+          culture: '#culture-activity-section'
+        };
+        
+        // 显示跳转提示
+        addAssistantMessage(`正在为您跳转到${getSectionName(section)}页面... 🚀`);
+        
+        // 模拟跳转（实际项目中可以跳转到对应页面）
+        setTimeout(() => {
+          addAssistantMessage(`已为您打开${getSectionName(section)}详细页面！您可信息。`);
+        }, 1500);
+      }
+
+      // 获取区域名称
+      function getSectionName(section) {
+        const names = {
+          redTour: '红色之旅',
+          tour: '游览导览',
+          history: '村史文化', 
+          news: '村子动态',
+          service: '乡村服务',
+          culture: '文化活动'
+        };
+        return names[section] || '相关';
+      }
+
+      // 添加聊天消息
+      function addAssistantMessage(message) {
+        const chatContent = document.getElementById('chatContent');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-bubble-assistant fade-in-up';
+        messageDiv.innerHTML = `<p>${message}</p>`;
+        chatContent.appendChild(messageDiv);
+      }
+
+      function addUserMessage(message) {
+        const chatContent = document.getElementById('chatContent');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex justify-end mb-2';
+        messageDiv.innerHTML = `
+                <div class="bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full px-3 py-2 text-sm max-w-xs">
+                    ${message}
+                </div>
+            `;
+        chatContent.appendChild(messageDiv);
+      }
+
+      // 发送消息
+      function sendMessage() {
+        const input = document.getElementById('textInput');
+        if (input && input.style.display !== 'none') {
+          const message = input.value.trim();
+          if (message) {
+            // 显示聊天窗口
+            document.getElementById('chatWindow').style.display = 'block';
+
+            addUserMessage(message);
+            input.value = '';
+
+            setTimeout(() => {
+              addAssistantMessage('收到您的消息！我来为您详细解答... 😊');
+            }, 1000);
+          }
+        }
+      }
+
+      function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+          sendMessage();
+        }
+      }
+
+      // 页面加载完成后开始介绍
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          startIntroduction();
+        }, 1000);
+      });
+    </script>
+  </body>
+</html>

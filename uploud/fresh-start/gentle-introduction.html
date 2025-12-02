@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>村官智能体 - 温柔引导</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+      }
+      @keyframes fadeInUp {
+          from {
+              opacity: 0;
+              transform: translateY(30px) scale(0.9);
+          }
+          to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+          }
+      }
+      @keyframes slideInLeft {
+          from {
+              opacity: 0;
+              transform: translateX(-100px);
+          }
+          to {
+              opacity: 1;
+              transform: translateX(0);
+          }
+      }
+      @keyframes slideInRight {
+          from {
+              opacity: 0;
+              transform: translateX(100px);
+          }
+          to {
+              opacity: 1;
+              transform: translateX(0);
+          }
+      }
+      @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.8; }
+      }
+
+      .float { animation: float 4s ease-in-out infinite; }
+      .pulse { animation: pulse 3s ease-in-out infinite; }
+      .fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
+      .slide-in-left { animation: slideInLeft 0.8s ease-out forwards; }
+      .slide-in-right { animation: slideInRight 0.8s ease-out forwards; }
+
+      /* 聊天窗口样式 */
+      .chat-window {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 350px;
+          max-height: 500px;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 25px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          z-index: 1000;
+      }
+
+      .chat-bubble-assistant {
+          background: rgba(248, 250, 252, 0.95);
+          color: #374151;
+          border-radius: 18px 18px 18px 4px;
+          padding: 12px 16px;
+          margin: 8px 0;
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      /* 功能模块卡片 */
+      .feature-module {
+          position: fixed;
+          width: 140px;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border-radius: 20px;
+          padding: 16px;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          opacity: 0;
+          z-index: 999;
+      }
+
+      .feature-module:hover {
+          transform: translateY(-4px) scale(1.05);
+          box-shadow: 0 16px 40px rgba(16, 185, 129, 0.2);
+      }
+
+      .feature-module.show {
+          opacity: 1;
+      }
+
+      /* 村官头像区域 */
+      .village-chief {
+          position: fixed;
+          bottom: 540px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1001;
+      }
+
+      /* 打字机效果 */
+      .typewriter {
+          overflow: hidden;
+          border-right: 2px solid #10b981;
+          white-space: nowrap;
+          margin: 0 auto;
+          animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+      }
+
+      @keyframes typing {
+          from { width: 0 }
+          to { width: 100% }
+      }
+
+      @keyframes blink-caret {
+          from, to { border-color: transparent }
+          50% { border-color: #10b981; }
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-emerald-50 via-white to-teal-50 min-h-screen overflow-hidden">
+    <!-- 背景装饰 -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div
+        class="absolute top-20 left-10 w-24 h-24 bg-emerald-100 rounded-full opacity-20 float"
+      ></div>
+      <div
+        class="absolute bottom-32 right-16 w-20 h-20 bg-teal-100 rounded-full opacity-30 float"
+        style="animation-delay: 1s"
+      ></div>
+      <div
+        class="absolute top-1/2 left-1/4 w-16 h-16 bg-green-100 rounded-full opacity-15 float"
+        style="animation-delay: 2s"
+      ></div>
+    </div>
+
+    <!-- 村官头像区域 -->
+    <div class="village-chief" id="villageChief">
+      <div class="relative">
+        <div
+          class="w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full p-1 shadow-xl pulse"
+        >
+          <div class="w-full h-full bg-white rounded-full p-1">
+            <video
+              id="chiefAvatar"
+              src="./mp4/gif.mp4"
+              class="w-full h-full rounded-full object-cover"
+              muted
+              loop
+              playsinline
+              autoplay
+              preload="auto"
+            ></video>
+          </div>
+        </div>
+        <!-- 在线状态 -->
+        <div
+          class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center"
+        >
+          <div class="w-2 h-2 bg-white rounded-full pulse"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 聊天窗口 -->
+    <div class="chat-window" id="chatWindow">
+      <!-- 聊天头部 -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-100">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full p-1">
+            <div class="w-full h-full bg-white rounded-full p-1">
+              <video
+                id="chatAvatar"
+                src="./mp4/gif.mp4"
+                class="w-full h-full rounded-full object-cover"
+                muted
+                loop
+                playsinline
+                autoplay
+                preload="auto"
+              ></video>
+            </div>
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-800">A叔村官</h4>
+            <p class="text-xs text-emerald-600">正在为您介绍...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 聊天内容区域 -->
+      <div class="p-4 h-80 overflow-y-auto" id="chatContent">
+        <!-- 欢迎消息会动态添加 -->
+      </div>
+
+      <!-- 输入区域 -->
+      <div class="p-4 border-t border-gray-100">
+        <div class="flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="和A叔聊聊..."
+            class="flex-1 bg-gray-50 border border-gray-200 rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
+            id="chatInput"
+            onkeypress="handleChatKeyPress(event)"
+          />
+          <button
+            onclick="sendChatMessage()"
+            class="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white hover:bg-emerald-600 transition-colors"
+          >
+            ➤
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 功能模块 - 红色之旅 (左上) -->
+    <div class="feature-module" id="redTourModule" style="top: 120px; left: 50px">
+      <div class="text-center">
+        <div class="text-3xl mb-2">🏛️</div>
+        <h4 class="text-sm font-bold text-gray-800 mb-1">红色之旅</h4>
+        <p class="text-xs text-gray-600">革命历史</p>
+        <p class="text-xs text-gray-600">红色遗址</p>
+      </div>
+    </div>
+
+    <!-- 功能模块 - 伴你游东里 (右上) -->
+    <div class="feature-module" id="tourModule" style="top: 120px; right: 50px">
+      <div class="text-center">
+        <div class="text-3xl mb-2">🌿</div>
+        <h4 class="text-sm font-bold text-gray-800 mb-1">伴你游东里</h4>
+        <p class="text-xs text-gray-600">精选路线</p>
+        <p class="text-xs text-gray-600">景点导览</p>
+      </div>
+    </div>
+
+    <!-- 功能模块 - 走进东里 (左下) -->
+    <div class="feature-module" id="historyModule" style="bottom: 180px; left: 50px">
+      <div class="text-center">
+        <div class="text-3xl mb-2">📚</div>
+        <h4 class="text-sm font-bold text-gray-800 mb-1">走进东里</h4>
+        <p class="text-xs text-gray-600">历史名人</p>
+        <p class="text-xs text-gray-600">乡贤故事</p>
+      </div>
+    </div>
+
+    <!-- 功能模块 - 村子动态 (右下) -->
+    <div class="feature-module" id="newsModule" style="bottom: 180px; right: 50px">
+      <div class="text-center">
+        <div class="text-3xl mb-2">📢</div>
+        <h4 class="text-sm font-bold text-gray-800 mb-1">村子动态</h4>
+        <p class="text-xs text-gray-600">村务公告</p>
+        <p class="text-xs text-gray-600">乡民集市</p>
+      </div>
+    </div>
+
+    <script>
+      let currentStep = 0;
+      let isIntroductionComplete = false;
+
+      // 介绍步骤和对应的消息
+      const introductionSteps = [
+        {
+          message: '你好呀！欢迎来到东里村~ 😊',
+          delay: 1000,
+        },
+        {
+          message: '我是A叔村官，很高兴见到你！🌿',
+          delay: 2000,
+        },
+        {
+          message: '让我为你介绍一下我们美丽的东里村吧...',
+          delay: 3000,
+        },
+        {
+          message: '如果你对红色旅行感兴趣，我可以为你提供专业的服务 🏛️',
+          delay: 4000,
+          showModule: 'redTourModule',
+          moduleAnimation: 'slide-in-left',
+        },
+        {
+          message: '我们村有着丰富的革命历史和红色遗址等着你来探索！',
+          delay: 6000,
+        },
+        {
+          message: '当然，我也可以带你游览我们村的自然风光 🌿',
+          delay: 8000,
+          showModule: 'tourModule',
+          moduleAnimation: 'slide-in-right',
+        },
+        {
+          message: '精选的旅游路线会让你深度体验东里村的魅力！',
+          delay: 10000,
+        },
+        {
+          message: '想了解我们村的历史文化吗？📚',
+          delay: 12000,
+          showModule: 'historyModule',
+          moduleAnimation: 'slide-in-left',
+        },
+        {
+          message: '这里有许多历史名人和乡贤的精彩故事...',
+          delay: 14000,
+        },
+        {
+          message: '还有我们村的最新动态和活动信息 📢',
+          delay: 16000,
+          showModule: 'newsModule',
+          moduleAnimation: 'slide-in-right',
+        },
+        {
+          message: '村务公告、乡民集市、农家订养... 应有尽有！',
+          delay: 18000,
+        },
+        {
+          message: '现在你可以点击任何感兴趣的模块，或者直接和我聊天哦！✨',
+          delay: 20000,
+          complete: true,
+        },
+      ];
+
+      // 开始介绍
+      function startIntroduction() {
+        introductionSteps.forEach((step, index) => {
+          setTimeout(() => {
+            addAssistantMessage(step.message);
+
+            // 显示对应的功能模块
+            if (step.showModule) {
+              setTimeout(() => {
+                showModule(step.showModule, step.moduleAnimation);
+              }, 1000);
+            }
+
+            // 标记介绍完成
+            if (step.complete) {
+              isIntroductionComplete = true;
+              updateChiefStatus();
+            }
+          }, step.delay);
+        });
+      }
+
+      // 显示功能模块
+      function showModule(moduleId, animation = 'fade-in-up') {
+        const module = document.getElementById(moduleId);
+        if (module) {
+          module.classList.add('show', animation);
+
+          // 添加点击事件
+          module.onclick = () => {
+            const moduleName = getModuleName(moduleId);
+            addUserMessage(`我想了解${moduleName}`);
+            setTimeout(() => {
+              addAssistantMessage(getModuleResponse(moduleId));
+            }, 1000);
+          };
+        }
+      }
+
+      // 更新村官状态
+      function updateChiefStatus() {
+        const statusElement = document.querySelector('.village-chief + .chat-window .text-xs');
+        if (statusElement) {
+          statusElement.textContent = '随时为您服务';
+        }
+      }
+
+      // 获取模块名称
+      function getModuleName(moduleId) {
+        const names = {
+          redTourModule: '红色之旅',
+          tourModule: '伴你游东里',
+          historyModule: '走进东里',
+          newsModule: '村子动态',
+        };
+        return names[moduleId] || '相关服务';
+      }
+
+      // 获取模块回复
+      function getModuleResponse(moduleId) {
+        const responses = {
+          redTourModule:
+            '太好了！我来为您详细介绍红色之旅路线。我们有烈士纪念碑、红军渡口等重要革命遗址，每一处都有着动人的历史故事... 🏛️',
+          tourModule:
+            '欢迎体验我们的精选旅游路线！有自然风光线、文化体验线、美食探索线，每设计... 🌿',
+          historyModule:
+            '东里村历史悠久，人才辈出！让我为您介绍我们的历史名人、乡贤历任和优秀青年的故事... 📚',
+          newsModule:
+            '这里有最新的村务信息！包括村公告服务、乡民集市、农家订养预定等便民服务... 📢',
+        };
+        return responses[moduleId] || '感谢您的关注，我会为您详细介绍！';
+      }
+
+      // 添加聊天消息
+      function addAssistantMessage(message) {
+        const chatContent = document.getElementById('chatContent');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-bubble-assistant fade-in-up';
+        messageDiv.innerHTML = `<p class="text-sm">${message}</p>`;
+        chatContent.appendChild(messageDiv);
+        chatContent.scrollTop = chatContent.scrollHeight;
+        
+        // 对话输出时自动播放视频
+        const video = document.getElementById('chiefAvatar');
+        if (video && video.paused) {
+          video.play().catch(err => {
+            console.log('视频自动播放失败:', err);
+          });
+        }
+      }
+
+      function addUserMessage(message) {
+        const chatContent = document.getElementById('chatContent');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex justify-end';
+        messageDiv.innerHTML = `
+                <div class="bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full px-4 py-2 text-sm max-w-xs">
+                    ${message}
+                </div>
+            `;
+        chatContent.appendChild(messageDiv);
+        chatContent.scrollTop = chatContent.scrollHeight;
+      }
+
+      // 发送聊天消息
+      function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (message) {
+          addUserMessage(message);
+          input.value = '';
+
+          setTimeout(() => {
+            if (isIntroductionComplete) {
+              addAssistantMessage('收到您的消息！我来为您详细解答... 😊');
+            } else {
+              addAssistantMessage('请稍等，让我先为您介绍完我们村的服务哦~ 😊');
+            }
+          }, 1000);
+        }
+      }
+
+      function handleChatKeyPress(event) {
+        if (event.key === 'Enter') {
+          sendChatMessage();
+        }
+      }
+
+      // 页面加载完成后开始介绍
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          startIntroduction();
+        }, 1000);
+      });
+    </script>
+  </body>
+</html>
