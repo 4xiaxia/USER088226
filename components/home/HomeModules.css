@@ -1,0 +1,133 @@
+/* 首页模块化样式 */
+
+/* 统一模块标题样式 */
+.module-title {
+  position: relative;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.module-title h2 {
+  position: relative;
+  display: inline-block;
+}
+
+.module-title h2::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  opacity: 0.3;
+}
+
+/* 整体首页布局 */
+.home-view {
+  background: linear-gradient(to bottom, #fafaf9 0%, #f5f5f4 100%);
+}
+
+/* 信息区块 */
+.home-info-section {
+  position: relative;
+  padding: 0.5rem 1rem;
+}
+
+/* PC端大屏调整 - 信息区块增加左右间距 */
+@media (min-width: 1024px) {
+  .home-info-section {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* 路线模块 - 降低高度 */
+.routes-module {
+  position: relative;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  margin: 1.5rem 1rem;
+  padding: 1.5rem 1rem 1rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.routes-module::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: #d4d4d8;
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+/* 名人堂模块 */
+.celebrity-module {
+  position: relative;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 2rem 1rem;
+  margin: 2rem 1rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.celebrity-module::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(100, 116, 139, 0.2) 50%, transparent 100%);
+}
+
+/* 风物志模块 */
+.local-specials-module {
+  position: relative;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 2rem 1rem 3rem;
+  margin: 2rem 1rem 0;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.local-specials-module::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(100, 116, 139, 0.2) 50%, transparent 100%);
+}
+
+/* 响应式调整 */
+@media (max-width: 640px) {
+  .routes-module,
+  .celebrity-module,
+  .local-specials-module {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+    border-radius: 1rem;
+  }
+}
+
+/* PC端大屏调整 - 增加左右弹性间距 */
+@media (min-width: 1024px) {
+  .routes-module,
+  .celebrity-module,
+  .local-specials-module {
+    margin-left: 2rem;
+    margin-right: 2rem;
+  }
+}

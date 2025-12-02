@@ -1,0 +1,145 @@
+/* 页面区块系统样式 */
+
+/* 区块包装器基础样式 */
+.page-block {
+  position: relative;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+/* 区块拖拽编辑模式样式 (未来可视化编辑器使用) */
+.page-block[data-editable="true"] {
+  outline: 2px dashed transparent;
+  transition: outline 0.2s ease;
+}
+
+.page-block[data-editable="true"]:hover {
+  outline-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.02);
+}
+
+.page-block[data-editing="true"] {
+  outline: 2px solid #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* 区块控制工具栏 */
+.block-toolbar {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+}
+
+.page-block[data-editable="true"]:hover .block-toolbar {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.block-toolbar button {
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.block-toolbar button:hover {
+  background: #f3f4f6;
+}
+
+/* 动态页面构建器容器 */
+.dynamic-page-builder {
+  position: relative;
+  min-height: 100vh;
+}
+
+/* 区块类型特定样式 */
+.block-info-banner,
+.block-function-grid {
+  /* 信息区块样式 */
+  position: relative;
+  width: 100%;
+}
+
+.block-routes-list {
+  /* 路线列表样式 */
+  position: relative;
+  width: 100%;
+}
+
+.block-celebrity-grid,
+.block-specials-grid {
+  /* 网格区块样式 */
+  display: grid;
+  gap: 1rem;
+}
+
+.block-map-button {
+  /* 按钮区块样式 */
+  width: 100%;
+}
+
+.block-image-banner,
+.block-text-section,
+.block-custom-html {
+  /* 自定义内容区块样式 */
+  position: relative;
+  width: 100%;
+}
+
+/* 空状态提示 */
+.block-empty-state {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #9ca3af;
+  border: 2px dashed #e5e7eb;
+  border-radius: 1rem;
+  margin: 1rem;
+}
+
+.block-empty-state h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #6b7280;
+}
+
+.block-empty-state p {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+/* 区块排序动画 */
+.page-block[data-sorting="true"] {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.page-block[data-sorting="true"][data-moving="up"] {
+  transform: translateY(-100%);
+}
+
+.page-block[data-sorting="true"][data-moving="down"] {
+  transform: translateY(100%);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .block-toolbar {
+    top: auto;
+    bottom: -40px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+}
